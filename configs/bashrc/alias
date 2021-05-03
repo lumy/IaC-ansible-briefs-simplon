@@ -1,0 +1,100 @@
+alias emacs='\emacs -nw'
+alias ne='emacs'
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# misc alias
+alias clean="find . -name '*.pyc' -delete ; find . -name '*~' -delete ; find . -name '.#*#' -delete ; find . -name '#*#' -delete"
+alias hosts='cat /etc/hosts'
+
+# Safe Aliases
+alias rm='\rm -i'
+alias mv='\mv -i'
+alias cp='\cp -i'
+
+# cd alias
+alias cd-.="cd - ; cd .. ;"
+alias cd-="cd -"
+alias cd.="cd .."
+alias ...="../.."
+
+# some ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# screen - tmux: aliases
+alias sls='screen -ls'
+alias sr='screen -r'
+alias sS='screen -S'
+alias ta='tmux attach'
+
+# svn alias
+alias svn='\svn --username tmenage'
+alias svns='svn status'
+alias svnco='svn co'
+alias svnci='svn ci'
+alias svni='svn info'
+alias svnlh='svn log | head'
+alias svna='svn add'
+alias svnd='svn diff'
+
+# git alias
+#alias guser="\git config user.email ; user.name"
+alias gs="\git status"
+DEFAULT_GPG_KEY="$(gpg --list-secret-keys --keyid-format LONG | grep rsa4096 | head -n1 | sed 's/.*rsa4096\/\([a-zA-Z0-9]*\) .*/\1/g')"
+alias gm="\git commit -S$DEFAULT_GPG_KEY -m"
+alias ga="\git add"
+alias gd="\git diff"
+alias gpush="\git push origin"
+alias gpull="\git pull origin"
+alias gc="\git checkout"
+alias gl="\git log"
+alias  gfetch="\git fetch"
+
+# misspelled alias
+alias emasc='emacs'
+alias eamcs='emacs'
+
+# docker aliases
+alias image_docker='docker images -a | grep none | awk '\''{print $3}'\'''
+alias ps_docker='docker ps -a | grep -v CONTAINER | awk '\''{print $1}'\'''
+alias volumes_docker='docker volume ls | awk '\''{print $2}'\'' '
+alias rm_docker='docker rm -f $(ps_docker)'
+alias rmi_docker='docker rmi --force $(image_docker) 2> /dev/null'
+alias rmv_docker='docker volume rm $(volumes_docker) 2> /dev/null'
+alias dcbuild="docker-compose build"
+alias dcup="docker-compose up"
+alias dcupb="docker-compose up --build"
+
+# python alias
+alias py="python -B"
+alias py3="python3 -B"
+alias d3="py3 django"
+alias m3="py3 manage.py"
+alias d2="py django"
+alias m2="py manage.py"
+alias pip3i="python3 -m pip install --user"
+alias cd=pyenv_or_not_pyenv
+
+# apt alias
+alias apt-get="sudo apt-get -y"
+alias aup="sudo apt-get -y update; sudo apt-get upgrade -y; sudo apt-get autoclean ; sudo apt-get autoremove ; sudo apt-get clean"
+alias apt-file="sudo apt-file --regexp search "
+
+# Chef alias
+alias cc_key="openssl rand -base64 512 | tr -d '\r\n'"
+
+
+alias reminder="echo diff foo \<\(ssh myServer 'cat foo'\)"
+
+if [ -e ~/.malias ]; then
+ . ~/.malias
+fi
