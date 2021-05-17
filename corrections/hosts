@@ -1,0 +1,4 @@
+
+[webserver]
+51.158.102.11	ansible_connection=ssh	ansible_python_interpreter=/usr/bin/python3 ansible_port=22
+

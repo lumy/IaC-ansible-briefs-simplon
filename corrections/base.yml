@@ -1,0 +1,60 @@
+
+- name: Packages base
+  hosts: all
+  vars:
+    packages:
+      - bash
+      - python-apt
+      - sudo
+    users:
+      - lumy
+  tasks:
+
+    - name: Base Packages
+      package:
+        name: "{{ item }}"
+        state: latest
+      loop: "{{ packages }}"
+
+    - name: Base Users
+      user:
+        name: "{{ item }}"
+        groups: root, sudo
+        shell: /bin/bash
+        generate_ssh_key: yes
+        force: no
+        create_home: yes
+        append: no
+      loop: "{{ users }}"
+
+    - name: Fetch Key
+      fetch:
+        dest: "/tmp/{{ item[0] }}_remote_key{{ item [1] }}"
+        src: "/home/{{ item[0] }}/.ssh/id_rsa{{ item[1] }}"
+        flat: yes
+      with_nested:
+        - ["{{ users }}"]
+        - ["", ".pub"]
+
+    - name: authorized_key
+      ansible.posix.authorized_key:
+        exclusive: yes
+        user: "{{ item }}"
+        key: "{{ lookup('file',  '/tmp/{{ item }}_remote_key.pub' ) }}"
+      loop: "{{ users }}"
+
+    - name: myalias
+      copy:
+        src: ./alias
+        dest: "/home/{{ item }}/.bash_aliases"
+        force: yes
+        group: "{{ item }}"
+        owner: "{{ item }}"
+        mode: 0664
+      loop: "{{ users }}"
+
+    - name: sudoers.d users file
+      copy:
+        content: "{{ item }} ALL=(ALL) NOPASSWD:ALL\n"
+        dest: "/etc/sudoers.d/30-{{ item }}-user"
+      loop: "{{ users }}"
