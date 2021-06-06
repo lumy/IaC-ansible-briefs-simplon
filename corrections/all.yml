@@ -1,0 +1,8 @@
+
+
+- name: Include First
+  import_playbook: base.yml
+- name: Include second
+  import_playbook: proxy.yml
+- name: Include last
+  import_playbook: blog.yml

@@ -1,0 +1,20 @@
+server {
+  listen 80;
+  {% if ssl is defined %}listen 443 ssl;{% endif %}
+  server_name {{ common_name }};
+
+  {% if ssl is defined %}ssl_certificate {{ ssl_certificate }};
+  ssl_certificate_key {{ ssl_key }};{% endif %}
+
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+
+  location ^~ /.well-known { root /var/www/certbot; }
+  location / {
+    {% if ssl is defined %}if ($scheme != "https") {
+        return 301 https://$host$request_uri;
+    }{% endif %}
+    {% if proxy_ip is defined %}proxy_pass http://{{ proxy_ip }};{% endif %}
+    {% if root is defined %} root {{ root }};{% endif%}
+  }
+}

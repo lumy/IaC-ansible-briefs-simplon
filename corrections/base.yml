@@ -1,5 +1,6 @@
 
 - name: Packages base
+  become: yes
   hosts: all
   vars:
     packages:
@@ -27,21 +28,21 @@
         append: no
       loop: "{{ users }}"
 
-    - name: Fetch Key
-      fetch:
-        dest: "/tmp/{{ item[0] }}_remote_key{{ item [1] }}"
-        src: "/home/{{ item[0] }}/.ssh/id_rsa{{ item[1] }}"
-        flat: yes
-      with_nested:
-        - ["{{ users }}"]
-        - ["", ".pub"]
+    # - name: Fetch Key
+    #   fetch:
+    #     dest: "/tmp/{{ item[0] }}_remote_key{{ item [1] }}"
+    #     src: "/home/{{ item[0] }}/.ssh/id_rsa{{ item[1] }}"
+    #     flat: yes
+    #   with_nested:
+    #     - ["{{ users }}"]
+    #     - ["", ".pub"]
 
-    - name: authorized_key
-      ansible.posix.authorized_key:
-        exclusive: yes
-        user: "{{ item }}"
-        key: "{{ lookup('file',  '/tmp/{{ item }}_remote_key.pub' ) }}"
-      loop: "{{ users }}"
+    # - name: authorized_key
+    #   ansible.posix.authorized_key:
+    #     exclusive: yes
+    #     user: "{{ item }}"
+    #     key: "{{ lookup('file',  '/tmp/{{ item }}_remote_key.pub' ) }}"
+    #   loop: "{{ users }}"
 
     - name: myalias
       copy:

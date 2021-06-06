@@ -1,0 +1,118 @@
+
+# First step create a key
+#
+
+
+- name: Install Proxy with SSL config
+  hosts: proxy
+  become: yes
+  vars:
+      common_name: "lumy-test.francecentral.cloudapp.azure.com"
+      proxy_ip: 10.0.2.4
+      ssl_certificate: /etc/ssl/private/test.lumy.me.fullchain
+      ssl_key: /etc/ssl/private/signin_key.pem
+
+  tasks:
+  - name: install fail2ban
+    package:
+      name: fail2ban
+
+  - name: install nginx
+    package:
+      name: nginx
+
+  - name: check if rules file exists
+    stat: 
+      path: /etc/ssl/private/test.lumy.me.fullchain
+    register: fullchain_file
+
+
+  - name: configure nginx
+    template:
+      dest: /etc/nginx/sites-available/default 
+      src: templates/nginx.conf.j2
+    when: fullchain_file.stat.exists == False
+
+  - name: restart nginx
+    service:
+      name: nginx
+      state: reloaded
+    when: fullchain_file.stat.exists == False
+
+  - name: create target folder
+    file:
+      dest: /var/www/certbot/.well-known/acme-challenge
+      recurse: yes
+      state: directory
+
+  - name: Generate RSA 4096 key
+    openssl_privatekey:
+      path: /etc/ssl/private/acme-account.key
+      type: RSA
+      size: 4096
+     
+  - name: Make sure account exists and has given contacts. We agree to TOS.
+    community.crypto.acme_account:
+      state: present
+      account_key_src: /etc/ssl/private/acme-account.key
+      acme_version: 2
+      acme_directory: https://acme-v02.api.letsencrypt.org/directory
+      terms_agreed: yes
+      contact:
+        - mailto:trash@lumy.me
+   
+  - name: generate signing key
+    community.crypto.openssl_privatekey:
+      path: "{{ ssl_key }}"
+      size: 4096
+
+
+  - name: Generate an OpenSSL Certificate Signing Request
+    community.crypto.openssl_csr:
+      path: /etc/ssl/private/test.lumy.me.csr
+      privatekey_path: "{{ ssl_key }}"
+      common_name: "{{ common_name }}"
+
+  - name: Create a challenge for sample.com using a account key file.
+    community.crypto.acme_certificate:
+      challenge: http-01
+      acme_version: 2
+      csr: /etc/ssl/private/test.lumy.me.csr
+      cert: /etc/ssl/private/test.lumy.me.crt
+      fullchain: "{{ ssl_certificate }}"
+      chain: /etc/ssl/private/test.lumy.me.chain
+      account_email: trash@lumy.me
+      account_key_src: /etc/ssl/private/acme-account.key
+      acme_directory: https://acme-v02.api.letsencrypt.org/directory
+      #dest: /etc/ssl/private/www.ansible.fullchain.pem
+      # Renew if the certificate is at least 30 days old
+      remaining_days: 60
+    register: sample_com_challenge
+
+  - name: Preparing Challenge
+    copy:
+      dest: /var/www/certbot/{{ sample_com_challenge['challenge_data'][common_name]['http-01']['resource'] }}
+      content: "{{ sample_com_challenge['challenge_data'][ common_name ]['http-01']['resource_value'] }}"
+    when: sample_com_challenge is changed and common_name in sample_com_challenge['challenge_data']
+
+  - name: Let the challenge be validated and retrieve the cert and intermediate certificate
+    community.crypto.acme_certificate:
+      account_key_src: /etc/ssl/private/acme-account.key
+      csr: /etc/ssl/private/test.lumy.me.csr
+      fullchain_dest: "{{ ssl_certificate }}"
+      #chain_dest: /etc/ssl/private/test.lumy.me.chain
+      data: "{{ sample_com_challenge }}"
+      acme_directory: https://acme-v02.api.letsencrypt.org/directory
+      acme_version: 2
+
+  - name: configure nginx
+    template:
+      dest: /etc/nginx/sites-available/default 
+      src: templates/nginx.conf.j2
+    vars:
+      ssl: yes
+
+  - name: restart nginx
+    service:
+      name: nginx
+      state: reloaded

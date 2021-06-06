@@ -1,4 +1,11 @@
 
-[webserver]
-51.158.102.11	ansible_connection=ssh	ansible_python_interpreter=/usr/bin/python3 ansible_port=22
+[proxy]
+20.199.125.34	ansible_python_interpreter=/usr/bin/python3 ansible_connection=ssh ansible_ssh_private_key_file=/home/lumy/.ssh/id_rsa ansible_user=lumy
 
+#[webserver]
+#lumy-test.francecentral.cloudapp.azure.com	ansible_connection=ssh	ansible_python_interpreter=/usr/bin/python3 ansible_port=22 ansible_ssh_private_key_file=/home/lumy/.ssh/id_rsa
+
+[bastion]
+webapp ansible_host=10.0.2.4 ansible_user=lumy ansible_python_interpreter=/usr/bin/python3
+[bastion:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -W %h:%p -q 20.199.125.34"'

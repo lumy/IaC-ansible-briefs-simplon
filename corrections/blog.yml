@@ -1,0 +1,49 @@
+
+- name: Generate blog and nginx config
+  hosts: webapp
+  become: yes
+  vars:
+    packages:
+      - nginx
+      - pelican
+
+  tasks:
+    - name: install package
+      package:
+        name: "{{ item }}"
+      loop: "{{ packages }}"
+  
+    - name: create target folder
+      file:
+        dest: /var/www/blog
+        recurse: yes
+        state: directory
+        group: www-data
+        owner: www-data
+
+    - name: Copy blog
+      copy:
+        src: blog
+        dest: /home/lumy
+        mode: 666
+        group: lumy
+        owner: lumy
+
+    - name: generate blog
+      shell:
+        chdir: /home/lumy/
+        cmd: pelican /home/lumy/blog/content -o /var/www/blog -s /home/lumy/blog/pelicanconf.py && chown -R "www-data:" /var/www/blog
+
+
+    - name: configure nginx
+      template:
+        dest: /etc/nginx/sites-available/default
+        src: templates/nginx.conf.j2
+      vars:
+        root: /var/www/blog
+        common_name: _
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: reloaded
